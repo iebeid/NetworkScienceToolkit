@@ -1,0 +1,16 @@
+dims 16,16,16
+activation  tanh
+residual    False
+patience    400
+split 70
+epochs  400
+train   True
+target  type
+regularization_rate 0.0005
+dropout_rate    0.5
+learning_rate   0.001
+batch_norm  False
+batch_norm_factor   0.001
+layer_norm  False
+layer_norm_epsilon  0.00001
+dataset cora
