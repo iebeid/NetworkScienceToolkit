@@ -2,15 +2,23 @@ import tensorflow as tf
 
 
 class DenseLayer:
-    def __init__(self, id, input, size, activation="relu", initializer="GlorotUniform"):
+    def __init__(self, id, input, size, activation="None", initializer="GlorotUniform()"):
+        self.id=id
         self.input = input
-        self.initializer = eval("tf.keras.initializers." + initializer)
-        self.activation = eval("tf.nn." + activation)
-        self.W = tf.Variable(self.initializer(shape=(int(self.input.shape[1]), size)), name="W_" + str(id))
-        self.b = tf.Variable(self.initializer(shape=(int(self.input.shape[0]), size)), name="b_" + str(id))
+        try:
+            self.initializer = eval("tf.keras.initializers." + initializer)
+        except:
+            self.initializer = None
+        try:
+            self.activation = eval("tf.nn." + activation)
+        except:
+            self.activation = None
+        self.W = tf.Variable(self.initializer(shape=(int(self.input.shape[1]), int(size))), name="W_" + str(self.id))
+        self.b = tf.Variable(self.initializer(shape=(int(self.input.shape[0]), int(size))), name="b_" + str(self.id))
+
 
     def compute(self):
-        if self.activation is None:
-            return tf.add(tf.matmul(self.input, self.W), self.b)
+        if not self.activation:
+            self.output = tf.add(tf.matmul(self.input, self.W), self.b)
         else:
-            return self.activation(tf.add(tf.matmul(self.input, self.W), self.b))
+            self.output = self.activation(tf.add(tf.matmul(self.input, self.W), self.b))
