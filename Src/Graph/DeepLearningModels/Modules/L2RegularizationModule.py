@@ -5,6 +5,6 @@ class L2RegularizationModule:
         self.rate = rate
         self.input = input
 
-    def operation(self):
+    def compute(self):
         r = tf.keras.regularizers.L2(self.rate)
         return r(self.input)

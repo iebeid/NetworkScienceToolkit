@@ -1,10 +1,11 @@
 import tensorflow as tf
 
 class BatchNormalizationModule:
-    def __init__(self, input, batch_normalization_factor):
+    def __init__(self, id, input, batch_normalization_factor):
+        self.id = id
         self.input = input
-        self.scale = tf.Variable(tf.ones([self.size]), name="scale_" + str(self.id))
-        self.beta = tf.Variable(tf.zeros([self.size]), name="beta_" + str(self.id))
+        self.scale = tf.Variable(tf.ones([int(self.input.shape.dims[0].value)]), name="scale_" + str(self.id))
+        self.beta = tf.Variable(tf.zeros([int(self.input.shape.dims[0].value)]), name="beta_" + str(self.id))
         self.batch_normalization_factor = batch_normalization_factor
 
     def compute(self):

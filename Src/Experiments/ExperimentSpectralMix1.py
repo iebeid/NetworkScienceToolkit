@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Src.DataPreparation.CoraCitationNetwork import CoraCitationNetwork
 from Src.DataPreparation.KarateClubNetwork import KarateClubNetwork
-from Src.Graph.DeepLearningModels.GCNModel import GCNModel
+from Src.Graph.MachineLearningModels.SpectralMixModel import SpectralMixModel
 from Src.Graph.Utils import AlgorithmicUtils
 
 
@@ -16,7 +16,7 @@ def main():
         print("Tensorflow is NOT built with CUDA support")
     print(tf.config.list_physical_devices("CPU"))
     print(tf.config.list_physical_devices("GPU"))
-    home_directory = "G:/My Drive/Research & Development/TWU/Projects/Network Science Toolkit/Code/NetworkScienceToolkit/"
+    home_directory = "G:/My Drive/Work/Research/TWU/Projects/Network Science Toolkit/Code/NetworkScienceToolkit/"
     # Hyper Parameters
     pararmeters = AlgorithmicUtils.read_config(home_directory + "Config/config.txt")
     dataset = str(pararmeters["dataset"])
@@ -40,10 +40,13 @@ def main():
         print(data.graph.node_type_profile)
         embedding_file = home_directory + "Data/Cora/Embedding/cora_embedding.tsv"
         metadata_file = home_directory + "Data/Cora/Embedding/cora_metadata.tsv"
-    model_nodes = GCNModel(data.graph, pararmeters)
-    model_nodes.train_model()
-    model_nodes.test_model()
-    model_nodes.save_model(embedding_file, metadata_file)
+    model = SpectralMixModel(data.graph, 128)
+    model.train()
+    # model_nodes = GCNModel(data.graph, pararmeters)
+    # model_nodes.train_model()
+    # model_nodes.test_model()
+    # model_nodes.save_model(embedding_file, metadata_file)
+
 
 
 if __name__ == '__main__':

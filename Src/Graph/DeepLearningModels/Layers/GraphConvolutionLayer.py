@@ -5,16 +5,16 @@ from Src.Graph.DeepLearningModels.Modules.L2RegularizationModule import L2Regula
 
 
 class GraphConvolutionLayer:
-    def __init__(self, id, input, graph, size, train=True, embedding=False, dropout_rate=0.5, regularize=False,
+    def __init__(self, id, input, graph, size, embedding=False, dropout_rate=0.5, regularize=False,
                  regularization_rate=0.0005, residual=False, batch_norm=False, batch_norm_factor=0.001,
                  layer_norm=False, layer_norm_factor=0.00001, activation=None):
         self.input = input
         self.graph = graph.degree_normalized_adjacency_tensorflow()
+        self.N = int(graph.N)
         self.initializer = tf.keras.initializers.GlorotUniform()
         self.activation = eval("tf.nn." + activation)
         self.id = id
-        self.size = size
-        self.train = train
+        self.size = int(size)
         self.embedding = embedding
         self.dropout_rate = dropout_rate
         self.regularize = regularize
@@ -24,34 +24,32 @@ class GraphConvolutionLayer:
         self.layer_norm = layer_norm
         self.batch_norm_factor = batch_norm_factor
         self.layer_norm_factor = layer_norm_factor
-        self.W = tf.Variable(self.initializer(shape=(int(self.input.shape.dims[1].value), int(self.size))), name="AW_" + str(self.id))
-        self.b = tf.Variable(self.initializer(shape=(int(self.input.shape.dims[0].value), int(self.size))), name="Ab_" + str(self.id))
+        self.W = tf.convert_to_tensor(tf.Variable(self.initializer(shape=(int(self.input.shape.dims[1].value), int(self.size))), name="AW_" + str(self.id), trainable=True))
+        self.b = tf.Variable(self.initializer(shape=(int(self.input.shape.dims[0].value), int(self.size))), name="Ab_" + str(self.id), trainable=True)
         self.M=None
         self.scale=None
         self.beta=None
-        self.Z = None
+        self.output = tf.Variable(self.initializer(shape=(int(self.input.shape.dims[0].value), int(self.size))), trainable=False)
         self.regularization_constant = 0
         if self.residual:
-            self.M = tf.Variable(self.initializer(self.graph.N, self.size), name="M_" + str(self.id))
+            self.M = tf.Variable(self.initializer(shape=(int(self.size), int(self.size))), name="M_" + str(self.id) , trainable=True)
         if self.batch_norm:
-            self.batch_norm_module = BatchNormalizationModule(self.Z, self.batch_norm_factor)
+            self.batch_norm_module = BatchNormalizationModule(self.id, self.output, self.batch_norm_factor)
             self.scale = self.batch_norm_module.scale
             self.beta = self.batch_norm_module.beta
         if self.layer_norm:
-            self.layer_norm_module = LayerNormalizationModule(self.Z, self.layer_norm_factor)
+            self.layer_norm_module = LayerNormalizationModule(self.id, self.output, self.layer_norm_factor)
             self.scale = self.layer_norm_module.scale
             self.beta = self.layer_norm_module.beta
 
-    def compute(self):
+    def compute(self, train):
         if self.residual:
             self.residual_layer = tf.matmul(self.input, self.M)
         self.output = tf.add(tf.matmul(tf.matmul(self.graph, self.input), self.W), self.b)
         if self.batch_norm:
-            bn_hidden_layer1 = self.batch_norm_module.compute()
-            self.output = self.activation(bn_hidden_layer1)
+            self.output = self.activation(self.batch_norm_module.compute())
         elif self.layer_norm:
-            bn_hidden_layer1 = self.layer_norm_module.compute()
-            self.output = self.activation(bn_hidden_layer1)
+            self.output = self.activation(self.layer_norm_module.compute())
         else:
             self.output = self.activation(self.output)
         # Compute residual layer
@@ -59,10 +57,9 @@ class GraphConvolutionLayer:
             self.output = tf.add(self.output, self.residual_layer)
         # Compute l2 regularization for first layer only
         if self.regularize:
-            l2_regularization_layer = L2RegularizationModule(self.regularization_rate, self.output)
-            self.regularization_constant = l2_regularization_layer.operation()
+            self.regularization_constant = L2RegularizationModule(self.regularization_rate, self.output).compute()
         if self.embedding:
             self.node_embeddings = tf.nn.l2_normalize(self.output, axis=1)
-        if self.train:
+        if train:
             # Dropout layer
             self.output = tf.nn.dropout(self.output, self.dropout_rate)

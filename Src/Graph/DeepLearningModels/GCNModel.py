@@ -23,7 +23,7 @@ class GCNModel:
     def __init__(self, graph, pararmeters):
 
         # Configuration
-        self.dims = list(pararmeters["dims"].split(","))
+        self.dims = list(map(int, pararmeters["dims"].split(",")))
         self.regularization_rate = float(pararmeters["regularization_rate"])
         self.dropout_rate = float(pararmeters["dropout_rate"])
         self.activation = pararmeters["activation"]
@@ -54,33 +54,21 @@ class GCNModel:
             self.X = []
             for n, f in graph.node_features.items():
                 self.X.append(eval(f))
-            self.X = tf.Variable(tf.convert_to_tensor(np.array([np.array(xi) for xi in X]), dtype=tf.float32), name="X")
+            self.X = tf.Variable(tf.convert_to_tensor(np.array([np.array(xi) for xi in self.X]), dtype=tf.float32),
+                                 name="X")
         else:
-            initializer=tf.keras.initializers.Identity()
-            self.X = tf.Variable(initializer((self.graph.N, self.graph.N)), name="X")
-        self.model_parameters_dict.append(self.X)
+            initializer = tf.keras.initializers.Identity()
+            self.X = tf.Variable(initializer((self.graph.N, self.dims[0])), name="X")
+        # self.model_parameters_dict.append(self.X)
 
-        # Training tensors
-        initializer = tf.keras.initializers.Zeros()
-        self.gradients = tf.Variable(initializer((self.X.shape[0], self.X.shape[1])), name="gradients")
-        self.train_loss = tf.Variable(initializer((1, 1)), name="train_loss")
-        self.train_accuracy = tf.Variable(initializer((1, 1)), name="train_accuracy")
-        self.valid_loss = tf.Variable(initializer((1, 1)), name="valid_loss")
-        self.valid_accuracy = tf.Variable(initializer((1, 1)), name="valid_accuracy")
-
-    def compile_model(self, train):
-        # id, input, graph, size, train=True, embedding=False, dropout_rate=0.5, regularize=False,
-        #         regularization_rate=0.0005, residual=False, batch_norm=False, batch_norm_factor=0.001,
-        #         layer_norm=False, layer_norm_factor=0.00001, activation="tanh",
-        #         initializer="GlorotUniform"
+        # Model definition
         # GCN Layer 1
-        self.Z_0 = GraphConvolutionLayer(0, self.X, self.graph, self.dims[0], train=train,
-                                         embedding=False, dropout_rate=self.dropout_rate, regularize=True,
+        self.Z_0 = GraphConvolutionLayer(0, self.X, self.graph, self.dims[0], embedding=False,
+                                         dropout_rate=self.dropout_rate, regularize=True,
                                          regularization_rate=self.regularization_rate, residual=self.residual,
                                          batch_norm=self.batch_norm, batch_norm_factor=self.batch_norm_factor,
                                          layer_norm=self.layer_norm, layer_norm_factor=self.layer_norm_epsilon,
                                          activation=self.activation)
-        self.Z_0.compute()
         if self.Z_0.W is not None:
             self.model_parameters_dict.append(self.Z_0.W)
         if self.Z_0.b is not None:
@@ -91,16 +79,14 @@ class GCNModel:
             self.model_parameters_dict.append(self.Z_0.scale)
         if self.Z_0.beta is not None:
             self.model_parameters_dict.append(self.Z_0.beta)
-        self.regularization_constant = self.Z_0.regularization_constant
-        # -----------------------------------------------------------------------------------------------
+
         # GCN Layer 2
-        self.Z_1 = GraphConvolutionLayer(1, self.Z_0.output, self.graph, self.dims[1], train=train, embedding=False,
+        self.Z_1 = GraphConvolutionLayer(1, self.Z_0.output, self.graph, self.dims[1], embedding=False,
                                          dropout_rate=self.dropout_rate, regularize=False,
                                          regularization_rate=self.regularization_rate, residual=self.residual,
                                          batch_norm=self.batch_norm, batch_norm_factor=self.batch_norm_factor,
                                          layer_norm=self.layer_norm, layer_norm_factor=self.layer_norm_epsilon,
                                          activation=self.activation)
-        self.Z_1.compute()
         if self.Z_1.W is not None:
             self.model_parameters_dict.append(self.Z_1.W)
         if self.Z_1.b is not None:
@@ -111,15 +97,14 @@ class GCNModel:
             self.model_parameters_dict.append(self.Z_1.scale)
         if self.Z_1.beta is not None:
             self.model_parameters_dict.append(self.Z_1.beta)
-        # -----------------------------------------------------------------------------------------------
+
         # GCN Layer 3
-        self.Z_2 = GraphConvolutionLayer(2, self.Z_1.output, self.graph, self.dims[2], train=train, embedding=True,
+        self.Z_2 = GraphConvolutionLayer(2, self.Z_1.output, self.graph, self.dims[2], embedding=True,
                                          dropout_rate=self.dropout_rate, regularize=False,
                                          regularization_rate=self.regularization_rate, residual=self.residual,
                                          batch_norm=self.batch_norm, batch_norm_factor=self.batch_norm_factor,
                                          layer_norm=self.layer_norm, layer_norm_factor=self.layer_norm_epsilon,
                                          activation=self.activation)
-        self.Z_2.compute()
         if self.Z_2.W is not None:
             self.model_parameters_dict.append(self.Z_2.W)
         if self.Z_2.b is not None:
@@ -130,17 +115,33 @@ class GCNModel:
             self.model_parameters_dict.append(self.Z_2.scale)
         if self.Z_2.beta is not None:
             self.model_parameters_dict.append(self.Z_2.beta)
-        # -----------------------------------------------------------------------------------------------
+
         # Fully Connected Layer 4
         self.logits = DenseLayer(3, self.Z_2.output, self.output_dim, activation="None", initializer="GlorotUniform()")
-        self.logits.compute()
         if self.logits.W is not None:
             self.model_parameters_dict.append(self.logits.W)
         if self.logits.b is not None:
             self.model_parameters_dict.append(self.logits.b)
+
+        # Output Prediction Layer
+        self.predictions = SoftmaxPredictionLayer(self.logits.output)
+
+    def compile_model(self, train):
+        # -----------------------------------------------------------------------------------------------
+        # GCN Layer 1
+        self.Z_0.compute(train)
+        self.regularization_constant = self.Z_0.regularization_constant
+        # -----------------------------------------------------------------------------------------------
+        # GCN Layer 2
+        self.Z_1.compute(train)
+        # -----------------------------------------------------------------------------------------------
+        # GCN Layer 3
+        self.Z_2.compute(train)
+        # -----------------------------------------------------------------------------------------------
+        # Fully Connected Layer 4
+        self.logits.compute()
         # -----------------------------------------------------------------------------------------------
         # Output prediction
-        self.predictions = SoftmaxPredictionLayer(self.logits.output)
         self.predictions.compute()
         # -----------------------------------------------------------------------------------------------
 
@@ -152,14 +153,17 @@ class GCNModel:
             start_time = time.perf_counter()
             with tf.GradientTape() as tape:
                 self.compile_model(True)
-                self.train_loss = RegularizedMaskedCrossEntropy(self.graph.y, self.predictions.output, self.graph.train_mask,
+                self.train_loss = RegularizedMaskedCrossEntropy(self.graph.y, self.predictions.output,
+                                                                self.graph.train_mask,
                                                                 self.regularization_constant).compute()
-                self.train_accuracy = MaskedAccuracy(self.graph.y, self.predictions.output, self.graph.train_mask).compute()
+                self.train_accuracy = MaskedAccuracy(self.graph.y, self.predictions.output,
+                                                     self.graph.train_mask).compute()
             self.gradients = tape.gradient(self.train_loss, self.model_parameters_dict)
             tf.keras.optimizers.Adam(learning_rate=self.learning_rate).apply_gradients(
                 list(zip(self.gradients, self.model_parameters_dict)))
             self.compile_model(False)
-            self.valid_loss = RegularizedMaskedCrossEntropy(self.graph.y, self.predictions.output, self.graph.valid_mask,
+            self.valid_loss = RegularizedMaskedCrossEntropy(self.graph.y, self.predictions.output,
+                                                            self.graph.valid_mask,
                                                             self.regularization_constant).compute()
             self.valid_accuracy = MaskedAccuracy(self.graph.y, self.predictions.output, self.graph.valid_mask).compute()
             end_time = time.perf_counter()
@@ -191,5 +195,5 @@ class GCNModel:
         print("Final Test Accuracy: " + str(test_accuracy.numpy()))
 
     def save_model(self, embedding_file, metadata_file):
-        np.savetxt(embedding_file, list(self.node_embeddings.numpy()), delimiter='\t', fmt='%f')
+        np.savetxt(embedding_file, list(self.Z_2.node_embeddings.numpy()), delimiter='\t', fmt='%f')
         np.savetxt(metadata_file, list(self.graph.nodes.keys()), delimiter='\t', fmt='%s')

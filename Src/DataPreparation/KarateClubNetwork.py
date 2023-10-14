@@ -77,7 +77,7 @@ class KarateClubNetwork:
                     "type": str(type),
                     "label": node_labels_dict[int(n_t)],
                     "cluster": 0,
-                    "attributes": None,
+                    "attributes": ["word1", "word2", "word3"],
                     "features": None
                 }
                 l = l + 1

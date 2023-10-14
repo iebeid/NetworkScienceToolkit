@@ -308,7 +308,6 @@ class Graph:
         return relationship_types
 
     def create_second_degree_graph(self):
-
         new_edges = {}
         new_nodes = {}
         new_node_id = 0
