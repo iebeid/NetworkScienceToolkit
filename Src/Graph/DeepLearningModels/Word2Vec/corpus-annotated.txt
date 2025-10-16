@@ -1,0 +1,10 @@
+[a]The [n]Solar [n]System [v]is [a]the [d]gravitationally [j]bound [n]system [r]of [a]the [n]Sun [c]and [a]the [n]objects [c]that [v]orbit [p]it [c]either [d]directly [c]or [d]indirectly
+[r]Of [a]the [n]objects [c]that [v]orbit [a]the [n]Sun [d]directly [a]the [j]largest [v]are [a]the [d]eight [n]planets
+[r]Of [a]the [n]objects [c]that [v]orbit [a]the [n]Sun [d]indirectly [c]like [a]the [n]moons [j]two [v]are [j]larger [r]than [a]the [j]smallest [n]planet [n]Mercury
+[a]The [n]SolarSystem [v]formed [n]4.6billion [n]years [d]ago [r]from [a]the [j]gravitational [n]collapse [r]of [a]a [j]giant [j]interstellar [j]molecular [n]cloud
+[a]The [d]vast [n]majority [r]of [a]the [n]system [n]mass [v]is [r]in [a]the [n]Sun [r]with [a]the [n]majority [r]of [a]the [d]remaining [n]mass [j]contained [r]in [n]Jupiter
+[a]The [d]four [d]smaller [d]inner [n]planets [n]Mercury [n]Venus [n]Earth [r]and [n]Mars [v]are [d]terrestrial [n]planets [v]being [d]primarily [v]composed [r]of [n]rock [r]and [n]metal
+[a]The [j]four [j]outer [n]planets [v]are [j]giant [n]planets [v]being [d]substantially [d]more [j]massive [r]than [a]the [n]terrestrials
+[a]The [j]two [j]largest [n]Jupiter [c]and [n]Saturn [v]are [j]gas [n]giants [v]being [j]composed [d]mainly [r]of [n]hydrogen [r]and [n]helium
+[a]The [j]two [j]outermost [n]planets [n]Uranus [c]and [n]Neptune [v]are [j]ice [n]giants [v]being [j]composed [d]mostly [r]of [n]substances [r]with [d]relatively [j]high [j]melting [n]points
+[j]All [j]eight [n]planets [v]have [j]almost [j]circular [n]orbits [c]that [v]lie [c]within [a]a [d]nearly [j]flat [n]disc [v]called [a]the [n]ecliptic
